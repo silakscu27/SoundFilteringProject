@@ -1,6 +1,6 @@
 # SoundFilteringProject
 
-# 🎧 Ses Gürültüsü Filtreleme Projesi – İşaretler ve Sistemler (Bahar 2024)
+# 🎧 Ses Gürültüsü Filtreleme Projesi – İşaretler ve Sistemler (Bahar 2025)
 
 Bu proje, Sakarya Uygulamalı Bilimler Üniversitesi "İşaretler ve Sistemler" dersi kapsamında geliştirilmiştir. Amaç; gürültülü ses kayıtlarından istenmeyen frekans bileşenlerini **klasik sinyal işleme teknikleri** kullanarak filtrelemektir.
 
