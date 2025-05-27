@@ -155,17 +155,3 @@ def design_and_test_filter(audio_path, stop_bands, output_dir='results/filtered'
     save_audio(output_path, filtered, sr)
     
     return filtered
-
-if __name__ == "__main__":
-    # Test kodu
-    TEST_MODE = False
-    
-    if TEST_MODE:
-        # Test parametreleri
-        test_audio = os.path.join('data', 'noisy', 'test.wav')
-        stop_freqs = [(1000, 3000)]  # 1kHz-3kHz arasını durdur
-        
-        # Filtreleme işlemini gerçekleştir
-        filtered_audio = design_and_test_filter(test_audio, stop_freqs)
-        
-        print("Filtreleme işlemi tamamlandı. Sonuçlar 'results/filtered' klasörüne kaydedildi.")

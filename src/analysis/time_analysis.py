@@ -187,30 +187,3 @@ def plot_silence_detection(audio_data, sr, title="Silence Detection"):
     os.makedirs(os.path.dirname(plot_path), exist_ok=True)
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
-
-if __name__ == "__main__":
-    # Test kodu
-    TEST_MODE = False
-    
-    if TEST_MODE:
-        import os
-        from utils.audio_io import load_audio
-        
-        # Test verilerini yükle
-        clean_path = os.path.join('data', 'original', 'test.wav')
-        noisy_path = os.path.join('data', 'noisy', 'test.wav')
-        
-        clean, sr = load_audio(clean_path)
-        noisy, _ = load_audio(noisy_path)
-        
-        # Basit bir filtre simülasyonu (test amaçlı)
-        filtered = noisy * 0.7 + clean * 0.3
-        
-        # Zaman domeni analizlerini çalıştır
-        plot_energy_comparison(clean, noisy, filtered, sr)
-        plot_zcr_comparison(clean, noisy, filtered, sr)
-        
-        # Sessizlik tespiti testi
-        plot_silence_detection(clean, sr, "Clean Audio Silence Detection")
-        plot_silence_detection(noisy, sr, "Noisy Audio Silence Detection")
-        plot_silence_detection(filtered, sr, "Filtered Audio Silence Detection")

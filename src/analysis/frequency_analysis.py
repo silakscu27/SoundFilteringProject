@@ -98,11 +98,3 @@ def analyze_audio_pair(clean_path, noisy_path):
     plot_frequency_comparison(clean_audio, noisy_audio, sr)
     
     return noise_bands
-
-if __name__ == "__main__":
-    # Test kodu
-    clean_test_path = os.path.join('data', 'original', 'test_clean.wav')
-    noisy_test_path = os.path.join('data', 'noisy', 'test_noisy.wav')
-    
-    bands = analyze_audio_pair(clean_test_path, noisy_test_path)
-    print(f"Identified noise bands: {bands}")

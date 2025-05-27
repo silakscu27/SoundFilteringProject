@@ -88,24 +88,3 @@ def stereo_to_mono(audio_data):
     if len(audio_data.shape) == 1:
         return audio_data
     return np.mean(audio_data, axis=1)
-
-if __name__ == "__main__":
-    # Test kodu
-    TEST_MODE = False
-    
-    if TEST_MODE:
-        # Örnek kullanım
-        test_file = os.path.join('data', 'original', 'test.wav')
-        
-        # Yükleme testi
-        audio, sr = load_audio(test_file)
-        print(f"Loaded audio: {len(audio)} samples at {sr}Hz")
-        
-        # Yeniden örnekleme testi
-        resampled = resample_audio(audio, sr, sr//2)
-        print(f"Resampled to: {len(resampled)} samples at {sr//2}Hz")
-        
-        # Kaydetme testi
-        save_path = os.path.join('results', 'test_output.wav')
-        save_audio(save_path, resampled, sr//2)
-        print(f"Audio saved to: {save_path}")

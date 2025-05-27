@@ -153,35 +153,3 @@ def design_and_apply_fir(input_path, output_dir, cutoff, filter_type, order=101,
     save_audio(output_path, filtered, sr)
     
     return filtered
-
-if __name__ == "__main__":
-    # Test kodu
-    TEST_MODE = False
-    
-    if TEST_MODE:
-        # Test parametreleri
-        test_audio = os.path.join('data', 'noisy', 'test.wav')
-        output_dir = os.path.join('results', 'fir_filtered')
-        
-        # 1. Alçak geçiren filtre testi
-        print("Alçak geçiren filtre uygulanıyor...")
-        design_and_apply_fir(test_audio, output_dir, 
-                           cutoff=2000, 
-                           filter_type='lowpass',
-                           order=151)
-        
-        # 2. Yüksek geçiren filtre testi
-        print("Yüksek geçiren filtre uygulanıyor...")
-        design_and_apply_fir(test_audio, output_dir, 
-                           cutoff=500, 
-                           filter_type='highpass',
-                           order=101)
-        
-        # 3. Bant geçiren filtre testi
-        print("Bant geçiren filtre uygulanıyor...")
-        design_and_apply_fir(test_audio, output_dir, 
-                           cutoff=[1000, 3000], 
-                           filter_type='bandpass',
-                           order=201)
-        
-        print("FIR filtre testleri tamamlandı. Sonuçlar 'results/fir_filtered' klasörüne kaydedildi.")

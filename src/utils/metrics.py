@@ -109,32 +109,3 @@ def plot_quality_metrics(original, noisy, filtered, sr, title="Quality Metrics")
     os.makedirs(os.path.dirname(plot_path), exist_ok=True)
     plt.savefig(plot_path)
     plt.close()
-
-if __name__ == "__main__":
-    # Test kodu
-    TEST_MODE = False
-    
-    if TEST_MODE:
-        import os
-        from utils.audio_io import load_audio
-        
-        # Test verilerini yükle
-        clean_path = os.path.join('data', 'original', 'test.wav')
-        noisy_path = os.path.join('data', 'noisy', 'test.wav')
-        
-        clean, sr = load_audio(clean_path)
-        noisy, _ = load_audio(noisy_path)
-        
-        # Basit bir filtre simülasyonu (test amaçlı)
-        filtered = noisy * 0.8 + clean * 0.2
-        
-        # Metrikleri hesapla ve göster
-        print(f"SNR (Noisy): {calculate_snr(clean, noisy):.2f} dB")
-        print(f"SNR (Filtered): {calculate_snr(clean, filtered):.2f} dB")
-        print(f"MSE (Noisy): {calculate_mse(clean, noisy):.6f}")
-        print(f"MSE (Filtered): {calculate_mse(clean, filtered):.6f}")
-        print(f"Spectral Distance (Noisy): {spectral_distance(clean, noisy, sr):.4f}")
-        print(f"Spectral Distance (Filtered): {spectral_distance(clean, filtered, sr):.4f}")
-        
-        # Grafik oluştur
-        plot_quality_metrics(clean, noisy, filtered, sr)

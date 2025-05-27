@@ -206,34 +206,3 @@ def plot_comprehensive_analysis(clean, noisy, filtered, sr, noise_bands=None):
     os.makedirs(os.path.dirname(plot_path), exist_ok=True)
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
     plt.close()
-
-if __name__ == "__main__":
-    # Test kodu
-    TEST_MODE = False
-    
-    if TEST_MODE:
-        import os
-        from utils.audio_io import load_audio
-        
-        # Test verilerini yükle
-        clean_path = os.path.join('data', 'original', 'test.wav')
-        noisy_path = os.path.join('data', 'noisy', 'test.wav')
-        
-        clean, sr = load_audio(clean_path)
-        noisy, _ = load_audio(noisy_path)
-        
-        # Basit bir filtre simülasyonu (test amaçlı)
-        filtered = noisy * 0.7 + clean * 0.3
-        
-        # Görselleştirmeleri oluştur
-        plot_waveform_comparison(clean, noisy, filtered, sr)
-        plot_spectrogram(clean, sr, "Clean Audio Spectrogram")
-        plot_spectrogram(noisy, sr, "Noisy Audio Spectrogram")
-        plot_spectrogram(filtered, sr, "Filtered Audio Spectrogram")
-        
-        # Basit bir FIR filtresi ile frekans tepkisi testi
-        fir_coeffs = signal.firwin(101, [1000, 3000], fs=sr, pass_zero=False)
-        plot_frequency_response(fir_coeffs, sr)
-        
-        # Kapsamlı analiz
-        plot_comprehensive_analysis(clean, noisy, filtered, sr, noise_bands=[(1500, 2500)])
