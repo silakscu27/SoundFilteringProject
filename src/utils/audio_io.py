@@ -1,90 +1,37 @@
 import os
-import numpy as np
 import soundfile as sf
-import librosa
+import numpy as np
 
-def load_audio(file_path, target_sr=None, mono=True):
+def load_audio(file_path):
     """
-    Ses dosyasını yükler ve temel ön işlemeler yapar
-    :param file_path: Ses dosyası yolu
-    :param target_sr: Hedef örnekleme oranı (None orijinali korur)
-    :param mono: Tek kanala dönüştürülsün mü?
-    :return: (audio_data, sample_rate) tuple'ı
+    Verilen dosya yolundan ses dosyasını yükler.
+    Geriye: sinyal (numpy array), örnekleme frekansı
     """
-    try:
-        # Librosa ile dosyayı yükle (dtype=np.float32)
-        audio, sr = librosa.load(file_path, sr=target_sr, mono=mono)
-        
-        # Normalizasyon (peak amplitude 1.0 olacak şekilde)
-        if np.max(np.abs(audio)) > 0:
-            audio = audio / np.max(np.abs(audio))
-            
-        return audio, sr
-        
-    except Exception as e:
-        raise RuntimeError(f"Error loading audio file {file_path}: {str(e)}")
-
-def save_audio(file_path, audio_data, sample_rate):
-    """
-    Ses dosyasını kaydeder
-    :param file_path: Kaydedilecek dosya yolu
-    :param audio_data: Ses verisi (numpy array)
-    :param sample_rate: Örnekleme oranı
-    """
-    try:
-        # Dizin yoksa oluştur
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
-        # PCM formatında kaydet (32-bit float)
-        sf.write(file_path, audio_data, sample_rate, subtype='FLOAT')
-        
-    except Exception as e:
-        raise RuntimeError(f"Error saving audio file {file_path}: {str(e)}")
-
-def resample_audio(audio_data, original_sr, target_sr):
-    """
-    Ses verisini yeniden örnekler
-    :param audio_data: Orijinal ses verisi
-    :param original_sr: Orijinal örnekleme oranı
-    :param target_sr: Hedef örnekleme oranı
-    :return: Yeniden örneklenmiş ses verisi
-    """
-    if original_sr == target_sr:
-        return audio_data
-        
-    duration = len(audio_data) / original_sr
-    new_length = int(duration * target_sr)
-    return librosa.resample(audio_data, orig_sr=original_sr, target_sr=target_sr)
-
-def normalize_audio(audio_data, target_level=-3.0):
-    """
-    Ses verisini normalleştirir (belirli bir dB seviyesine)
-    :param audio_data: Ses verisi
-    :param target_level: Hedef dB seviyesi (negatif değer)
-    :return: Normalleştirilmiş ses verisi
-    """
-    if len(audio_data) == 0:
-        return audio_data
-        
-    # RMS değerini hesapla
-    rms = np.sqrt(np.mean(audio_data**2))
-    if rms < 1e-6:  # Sessiz dosya
-        return audio_data
-        
-    # Hedef genliği hesapla (dBFS cinsinden)
-    target_amplitude = 10 ** (target_level / 20)
-    current_amplitude = np.max(np.abs(audio_data))
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Ses dosyası bulunamadı: {file_path}")
     
-    # Normalizasyon faktörü
-    scaling_factor = target_amplitude / current_amplitude
-    return np.clip(audio_data * scaling_factor, -1.0, 1.0)
+    data, sample_rate = sf.read(file_path)
+    return data, sample_rate
 
-def stereo_to_mono(audio_data):
+def save_audio(file_path, signal, sample_rate):
     """
-    Stereo sesi mono'ya dönüştürür
-    :param audio_data: Stereo ses verisi (2D array)
-    :return: Mono ses verisi
+    İşlenmiş sesi belirlenen yola kaydeder (.wav).
     """
-    if len(audio_data.shape) == 1:
-        return audio_data
-    return np.mean(audio_data, axis=1)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    sf.write(file_path, signal, sample_rate)
+
+def match_file_pairs(original_dir, noisy_dir):
+    """
+    Orijinal ve gürültülü klasörler arasında dosya adı eşleşmesi yapar.
+    Geriye: (original_path, noisy_path) çiftlerinden oluşan liste
+    """
+    pairs = []
+    noisy_files = os.listdir(noisy_dir)
+
+    for file_name in noisy_files:
+        original_path = os.path.join(original_dir, file_name)
+        noisy_path = os.path.join(noisy_dir, file_name)
+        if os.path.exists(original_path):
+            pairs.append((original_path, noisy_path))
+    
+    return pairs
