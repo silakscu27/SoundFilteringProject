@@ -1,178 +1,53 @@
 import numpy as np
-from scipy import signal
-import matplotlib.pyplot as plt
-import os
-from utils.audio_io import load_audio, save_audio
-from utils.visualization import plot_frequency_response
+from scipy.signal import butter, lfilter
 
-class IIRFilter:
+def design_iir_filter(filter_type, cutoff, fs, order=4, band=None):
     """
-    Özelleştirilebilir IIR filtre tasarımı ve uygulaması
+    IIR filtre tasarımı (Butterworth).
     
-    Desteklenen filtre tipleri:
-    - Butterworth
-    - Chebyshev Tip I
-    - Chebyshev Tip II
-    - Eliptik
-    - Bessel
+    Parametreler:
+        filter_type: 'lowpass', 'highpass', 'bandpass', 'bandstop'
+        cutoff: low/high filtrelerde sınır frekansı [Hz]
+        fs: örnekleme frekansı [Hz]
+        order: filtre derecesi
+        band: bandpass/bandstop için [low, high] frekansları
+    
+    Geriye:
+        b, a: Filtre katsayıları
     """
-    
-    def __init__(self, sample_rate, cutoff_freq, filter_type='lowpass', 
-                 iir_type='butterworth', order=4, rp=1, rs=40):
-        """
-        IIR filtresi tasarlar
-        
-        :param sample_rate: Örnekleme frekansı (Hz)
-        :param cutoff_freq: Kesim frekansı (tek değer veya [low, high] listesi)
-        :param filter_type: 'lowpass', 'highpass', 'bandpass', 'bandstop'
-        :param iir_type: 'butterworth', 'cheby1', 'cheby2', 'ellip', 'bessel'
-        :param order: Filtre derecesi
-        :param rp: Chebyshev Tip I ve Eliptik için geçiş bandı dalgalanması (dB)
-        :param rs: Chebyshev Tip II ve Eliptik için durdurma bandı zayıflaması (dB)
-        """
-        self.sample_rate = sample_rate
-        self.cutoff_freq = cutoff_freq
-        self.filter_type = filter_type
-        self.iir_type = iir_type.lower()
-        self.order = order
-        self.rp = rp
-        self.rs = rs
-        self.sos = self._design_filter()
-        
-    def _design_filter(self):
-        """
-        IIR filtre katsayılarını tasarlar (Second-Order Sections formatında)
-        """
-        nyquist = 0.5 * self.sample_rate
-        
-        # Kesim frekanslarını normalize et
-        if isinstance(self.cutoff_freq, (list, tuple, np.ndarray)):
-            normalized_cutoff = [f / nyquist for f in self.cutoff_freq]
-        else:
-            normalized_cutoff = self.cutoff_freq / nyquist
-        
-        # Filtre tipine göre tasarım yap
-        if self.iir_type == 'butterworth':
-            sos = signal.butter(self.order, 
-                              normalized_cutoff, 
-                              btype=self.filter_type,
-                              output='sos',
-                              fs=self.sample_rate)
-        elif self.iir_type == 'cheby1':
-            sos = signal.cheby1(self.order, 
-                              self.rp,
-                              normalized_cutoff, 
-                              btype=self.filter_type,
-                              output='sos',
-                              fs=self.sample_rate)
-        elif self.iir_type == 'cheby2':
-            sos = signal.cheby2(self.order, 
-                              self.rs,
-                              normalized_cutoff, 
-                              btype=self.filter_type,
-                              output='sos',
-                              fs=self.sample_rate)
-        elif self.iir_type == 'ellip':
-            sos = signal.ellip(self.order, 
-                             self.rp,
-                             self.rs,
-                             normalized_cutoff, 
-                             btype=self.filter_type,
-                             output='sos',
-                             fs=self.sample_rate)
-        elif self.iir_type == 'bessel':
-            sos = signal.bessel(self.order, 
-                              normalized_cutoff, 
-                              btype=self.filter_type,
-                              output='sos',
-                              fs=self.sample_rate)
-        else:
-            raise ValueError("Geçersiz IIR tipi. 'butterworth', 'cheby1', 'cheby2', 'ellip' veya 'bessel' olmalı")
-        
-        return sos
-    
-    def apply(self, audio_data):
-        """
-        Filtreyi ses sinyaline uygular (sabit fazlı filtreleme)
-        
-        :param audio_data: Giriş ses sinyali
-        :return: Filtrelenmiş ses sinyali
-        """
-        # İleri-geri filtreleme ile faz bozulmasını önle
-        filtered = signal.sosfiltfilt(self.sos, audio_data)
-        return filtered
-    
-    def plot_response(self, save_path=None):
-        """
-        Filtrenin frekans tepkisini çizer
-        
-        :param save_path: Kaydedilecek dosya yolu (None ise göstermez)
-        """
-        w, h = signal.sosfreqz(self.sos, fs=self.sample_rate)
-        
-        plt.figure(figsize=(10, 6))
-        
-        # Genlik tepkisi (dB)
-        plt.subplot(2, 1, 1)
-        plt.plot(w, 20 * np.log10(np.abs(h) + 1e-10))
-        plt.title(f'{self.iir_type.capitalize()} {self.filter_type} Filter\nCutoff: {self.cutoff_freq}Hz, Order: {self.order}')
-        plt.ylabel('Amplitude (dB)')
-        plt.grid(True)
-        
-        # Kesim frekanslarını işaretle
-        if isinstance(self.cutoff_freq, (list, tuple, np.ndarray)):
-            for fc in self.cutoff_freq:
-                plt.axvline(fc, color='red', linestyle='--', alpha=0.5)
-        else:
-            plt.axvline(self.cutoff_freq, color='red', linestyle='--', alpha=0.5)
-        
-        # Faz tepkisi
-        plt.subplot(2, 1, 2)
-        plt.plot(w, np.unwrap(np.angle(h)))
-        plt.ylabel('Phase (radians)')
-        plt.xlabel('Frequency (Hz)')
-        plt.grid(True)
-        
-        plt.tight_layout()
-        
-        if save_path:
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            plt.savefig(save_path, dpi=300)
-            plt.close()
-        else:
-            plt.show()
+    nyq = fs / 2
 
-def design_and_apply_iir(input_path, output_dir, cutoff, filter_type, 
-                        iir_type='butterworth', order=4, rp=1, rs=40):
+    if filter_type == 'lowpass':
+        normal_cutoff = cutoff / nyq
+        b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    elif filter_type == 'highpass':
+        normal_cutoff = cutoff / nyq
+        b, a = butter(order, normal_cutoff, btype='high', analog=False)
+    elif filter_type == 'bandpass':
+        if band is None or len(band) != 2:
+            raise ValueError("Bandpass requires a band=[low, high] argument.")
+        normal_band = [band[0] / nyq, band[1] / nyq]
+        b, a = butter(order, normal_band, btype='band', analog=False)
+    elif filter_type == 'bandstop':
+        if band is None or len(band) != 2:
+            raise ValueError("Bandstop requires a band=[low, high] argument.")
+        normal_band = [band[0] / nyq, band[1] / nyq]
+        b, a = butter(order, normal_band, btype='bandstop', analog=False)
+    else:
+        raise ValueError(f"Unsupported filter type: {filter_type}")
+
+    return b, a
+
+def apply_iir_filter(signal, b, a):
     """
-    IIR filtresi tasarlar, uygular ve sonuçları kaydeder
-    
-    :param input_path: Giriş ses dosyası yolu
-    :param output_dir: Çıktı dizini
-    :param cutoff: Kesim frekansı (Hz)
-    :param filter_type: Filtre tipi
-    :param iir_type: IIR filtre tipi
-    :param order: Filtre derecesi
-    :param rp: Geçiş bandı dalgalanması (dB)
-    :param rs: Durdurma bandı zayıflaması (dB)
-    :return: Filtrelenmiş ses verisi
+    IIR filtresini sinyale uygular.
     """
-    # Ses dosyasını yükle
-    audio, sr = load_audio(input_path)
+    if not isinstance(signal, np.ndarray):
+        raise TypeError("Signal must be a numpy array.")
     
-    # Filtreyi tasarla
-    iir_filter = IIRFilter(sr, cutoff, filter_type, iir_type, order, rp, rs)
-    
-    # Frekans tepkisini kaydet
-    os.makedirs(output_dir, exist_ok=True)
-    plot_path = os.path.join(output_dir, f'iir_{iir_type}_{filter_type}_response.png')
-    iir_filter.plot_response(save_path=plot_path)
-    
-    # Filtreyi uygula
-    filtered = iir_filter.apply(audio)
-    
-    # Sonucu kaydet
-    output_path = os.path.join(output_dir, f'iir_{iir_type}_{filter_type}_filtered.wav')
-    save_audio(output_path, filtered, sr)
-    
+    try:
+        filtered = lfilter(b, a, signal)
+    except Exception as e:
+        raise RuntimeError(f"IIR filter application failed: {e}")
+
     return filtered
