@@ -1,53 +1,61 @@
 import numpy as np
-from scipy.signal import butter, lfilter
+from scipy.signal import butter, filtfilt, lfilter
 
-def design_iir_filter(filter_type, cutoff, fs, order=4, band=None):
+def design_iir_filter(filter_type, fs, order=4, cutoff=None, band=None):
     """
     IIR filtre tasarımı (Butterworth).
-    
+
     Parametreler:
         filter_type: 'lowpass', 'highpass', 'bandpass', 'bandstop'
-        cutoff: low/high filtrelerde sınır frekansı [Hz]
-        fs: örnekleme frekansı [Hz]
+        fs: örnekleme frekansı (Hz)
         order: filtre derecesi
-        band: bandpass/bandstop için [low, high] frekansları
-    
+        cutoff: low/high filtreler için frekans değeri (Hz)
+        band: bandpass/bandstop için [low, high] (Hz)
+
     Geriye:
         b, a: Filtre katsayıları
     """
-    nyq = fs / 2
+    nyq = fs / 2  # Nyquist frekansı
 
-    if filter_type == 'lowpass':
-        normal_cutoff = cutoff / nyq
-        b, a = butter(order, normal_cutoff, btype='low', analog=False)
-    elif filter_type == 'highpass':
-        normal_cutoff = cutoff / nyq
-        b, a = butter(order, normal_cutoff, btype='high', analog=False)
-    elif filter_type == 'bandpass':
+    if filter_type in ['lowpass', 'highpass']:
+        if cutoff is None:
+            raise ValueError("cutoff frekansı belirtilmeli.")
+        norm_cutoff = cutoff / nyq
+        b, a = butter(order, norm_cutoff, btype=filter_type, analog=False)
+
+    elif filter_type in ['bandpass', 'bandstop']:
         if band is None or len(band) != 2:
-            raise ValueError("Bandpass requires a band=[low, high] argument.")
-        normal_band = [band[0] / nyq, band[1] / nyq]
-        b, a = butter(order, normal_band, btype='band', analog=False)
-    elif filter_type == 'bandstop':
-        if band is None or len(band) != 2:
-            raise ValueError("Bandstop requires a band=[low, high] argument.")
-        normal_band = [band[0] / nyq, band[1] / nyq]
-        b, a = butter(order, normal_band, btype='bandstop', analog=False)
+            raise ValueError("Bandpass/Bandstop için band=[low, high] girilmeli.")
+        norm_band = [band[0] / nyq, band[1] / nyq]
+        b, a = butter(order, norm_band, btype=filter_type, analog=False)
+
     else:
-        raise ValueError(f"Unsupported filter type: {filter_type}")
+        raise ValueError(f"Geçersiz filtre türü: {filter_type}")
 
     return b, a
 
-def apply_iir_filter(signal, b, a):
+
+def apply_iir_filter(signal, b, a, zero_phase=True):
     """
-    IIR filtresini sinyale uygular.
+    IIR filtresini uygular. İsteğe bağlı olarak sıfır faz bozulmalı (filtfilt) çalışır.
+
+    Parametreler:
+        signal: giriş sinyali (numpy array)
+        b, a: filtre katsayıları
+        zero_phase: True ise filtfilt (faz bozmaz), False ise lfilter
+
+    Geriye:
+        filtered: filtrelenmiş sinyal
     """
     if not isinstance(signal, np.ndarray):
-        raise TypeError("Signal must be a numpy array.")
-    
+        raise TypeError("Giriş sinyali numpy array olmalı.")
+
     try:
-        filtered = lfilter(b, a, signal)
+        if zero_phase:
+            filtered = filtfilt(b, a, signal)
+        else:
+            filtered = lfilter(b, a, signal)
     except Exception as e:
-        raise RuntimeError(f"IIR filter application failed: {e}")
+        raise RuntimeError(f"Filtre uygulama hatası: {e}")
 
     return filtered
